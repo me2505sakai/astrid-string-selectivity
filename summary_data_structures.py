@@ -42,12 +42,9 @@ class SummaryDataStructure:
     #and outputs a list of "substrings" of interest.
     #for e.g. all prefixes, suffixes,
     #max_str_size: will be the largest prefix, substring, suffix string that will be created
-    #split_words: whether to ignore spaces in a string.
-    #if split_words is true, then "a b" will be inserted as two words a b .. else one word with space.
-    def __init__(self, string_generator_fn, max_str_size=MAX_STR_SIZE, split_words=True):
+    def __init__(self, string_generator_fn, max_str_size=MAX_STR_SIZE):
         self.string_generator_fn = string_generator_fn
         self.max_str_size = max_str_size
-        self.split_words = split_words
         self.root_node = SummaryDSNode('')
 
     def insert_string(self, string):
@@ -67,11 +64,8 @@ class SummaryDataStructure:
     def update_summary_ds_from_file(self, input_file_name):
         with open(input_file_name) as f:
             for line in f:
-                strings = [line.strip()]
-                if self.split_words:
-                    strings = line.strip().split()
-                for string in strings:
-                    self.insert_string(string)
+                string = line.strip()
+                self.insert_string(string)
 
     #returns a data frame with all the strings in the summary data structure and its frequencies
     def get_selectivities(self):
@@ -155,10 +149,24 @@ class SummaryDataStructure:
 
 
 def get_all_prefixes(string, max_size=MAX_STR_SIZE):
-    return [string[:j] for j in range(1, min(max_size, len(string)) + 1)]
+    arr = []
+    words = string.split()
+    for word in words:
+        arr.extend([word[:j] for j in range(1, min(max_size, len(word)) + 1)])
+    return arr
+
+def get_unique_prefixes(string, max_size=MAX_STR_SIZE):
+    return list(set(get_all_prefixes(string, max_size=MAX_STR_SIZE)))
 
 def get_all_suffixes(string, max_size=MAX_STR_SIZE):
-    return [string[-j:] for j in range(1, min(max_size, len(string)) + 1)]
+    arr = []
+    words = string.split()
+    for word in words:
+        arr.extend([word[-j:] for j in range(1, min(max_size, len(word)) + 1)])
+    return arr
+
+def get_unique_suffixes(string, max_size=MAX_STR_SIZE):
+    return list(set(get_all_suffixes(string, max_size=MAX_STR_SIZE)))
 
 def get_all_substrings(string, max_size=MAX_STR_SIZE):
     arr = []
@@ -169,7 +177,11 @@ def get_all_substrings(string, max_size=MAX_STR_SIZE):
                 arr.append(string[i:(j+1)])
     return arr
 
+def get_unique_substrings(string, max_size=MAX_STR_SIZE):
+    return list(set(get_all_substrings(string, max_size=MAX_STR_SIZE)))
+
 #Naive way to compute all strings of interest that avoids the use of summary data structures
+#使用に注意:get_unique_substirngsに相当するような集計を行う処理が未実装で更新が未完であるためにsplit_wordsなどが残っている
 def aggregate_strings_of_interest(input_file_name, string_agg_fn,
     max_size=MAX_STR_SIZE, split_words=True, output_file_name=None):
     string_frequency_dict = defaultdict(int)
