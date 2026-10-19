@@ -24,27 +24,27 @@ def load_and_save_dblp():
     titles = pd.Series(titles)
     authors = pd.Series(authors)
 
-    titles.str.replace(regex_pattern, '').to_csv("datasets/dblp/dblp_titles.csv", index=False, header=False)
-    authors.str.replace(regex_pattern, '').to_csv("datasets/dblp/dblp_authors.csv", index=False, header=False)
+    re.sub(regex_pattern, '', titles.str).to_csv("datasets/dblp/dblp_titles.csv", index=False, header=False)
+    re.sub(regex_pattern, '', authors.str).to_csv("datasets/dblp/dblp_authors.csv", index=False, header=False)
 
 #Download from https://github.com/gregrahn/join-order-benchmark
 def load_imdb_movie_titles():
     df = pd.read_csv("title.csv", header=None, warn_bad_lines=True, error_bad_lines=False)
     #second column is the title
-    df[1].str.replace(regex_pattern, '').to_csv("datasets/imdb/imdb_movie_titles.csv", index=False, header=False)
+    re.sub(regex_pattern, '', df[1].str).to_csv("datasets/imdb/imdb_movie_titles.csv", index=False, header=False)
 
 #Download from https://github.com/gregrahn/join-order-benchmark
 def load_imdb_movie_actors():
     df = pd.read_csv("name.csv", header=None, warn_bad_lines=True, error_bad_lines=False)
     #second column is the title
-    df[1].str.replace(regex_pattern, '').to_csv("datasets/imdb/imdb_movie_actors.csv", index=False, header=False)
+    re.sub(regex_pattern, '', df[1].str).to_csv("datasets/imdb/imdb_movie_actors.csv", index=False, header=False)
 
 #download from https://github.com/electrum/tpch-dbgen
 #schema diagram at https://docs.deistercloud.com/content/Databases.30/TPCH%20Benchmark.90/Data%20generation%20tool.30.xml?embedded=true
 def load_and_save_tpch():
     col_names = ["partkey", "name", "mfgr", "brand", "type", "size", "container", "retailprice", "comment"]
     df = pd.read_csv("part.tbl", sep='|', names = col_names,  warn_bad_lines=True, error_bad_lines=False, index_col=False)
-    df["name"].str.replace(regex_pattern, '').to_csv("datasets/tpch/tpch_part_names.csv", index=False, header=False)
+    re.sub(regex_pattern, '', df["name"].str).to_csv("datasets/tpch/tpch_part_names.csv", index=False, header=False)
 
 #This function will take a input file that contains strings one line at a time
 #creates summary data structures for prefix, substring, suffix
