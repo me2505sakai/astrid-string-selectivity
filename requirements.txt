@@ -1,6 +1,6 @@
 anytree
 numpy
 pandas
-sklearn
+scikit-learn
 torch
 tqdm
