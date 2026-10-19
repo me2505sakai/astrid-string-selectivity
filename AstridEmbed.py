@@ -124,6 +124,7 @@ def load_selectivity_estimation_model(model_file_name, string_helper):
     return selectivity_model
 
 def main():
+    global embedding_learner_configs, frequency_configs, selectivity_learner_configs
     random_seed = 1234
     misc_utils.initialize_random_seeds(random_seed)
 
