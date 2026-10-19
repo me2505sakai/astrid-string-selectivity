@@ -80,7 +80,8 @@ class StringSelectivityDataset(Dataset):
                 #By default embedding mode expects a tensor of [batch size x alphabet_size * max_string_length]
                 #so create a "fake" dimension that converts the 2D matrix into a 3D tensor
                 string_as_tensor = string_as_tensor.view(-1, *string_as_tensor.shape)
-                self.strings_as_tensors.append(self.embedding_model(string_as_tensor).numpy())
+                string_as_tensor = string_as_tensor.to(next(self.embedding_model.parameters()).device)
+                self.strings_as_tensors.append(self.embedding_model(string_as_tensor).cpu().numpy())
             self.strings_as_tensors = np.concatenate(self.strings_as_tensors)
 
     def __len__(self):

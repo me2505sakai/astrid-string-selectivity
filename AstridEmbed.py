@@ -100,14 +100,15 @@ def get_selectivity_for_strings(strings, embedding_model, selectivity_model, str
             #By default embedding mode expects a tensor of [batch size x alphabet_size * max_string_length]
             #so create a "fake" dimension that converts the 2D matrix into a 3D tensor
             string_as_tensor = string_as_tensor.view(-1, *string_as_tensor.shape)
-            strings_as_tensors.append(embedding_model(string_as_tensor).numpy())
+            string_as_tensor = string_as_tensor.to(next(embedding_model.parameters()).device)
+            strings_as_tensors.append(embedding_model(string_as_tensor).cpu().numpy())
         strings_as_tensors = np.concatenate(strings_as_tensors)
         #normalized_selectivities= between 0 to 1 after the min-max and log scaling.
         #denormalized_predictions are the frequencies between 0 to N
-        normalized_predictions = selectivity_model(torch.tensor(strings_as_tensors))
+        normalized_predictions = selectivity_model(torch.tensor(strings_as_tensors).to(next(selectivity_model.parameters()).device))
         denormalized_predictions = misc_utils.unnormalize_torch(normalized_predictions, selectivity_learner_configs.min_val,
             selectivity_learner_configs.max_val)
-        return normalized_predictions, denormalized_predictions
+        return normalized_predictions.cpu(), denormalized_predictions.cpu()
 
 
 def load_embedding_model(model_file_name, string_helper):
