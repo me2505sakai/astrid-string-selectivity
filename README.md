@@ -1,17 +1,20 @@
-##Steps
+## Acknowledgements
+このリポジトリはエラー修正と改善のために[astrid-string-selectivity](https://github.com/saravanan-thirumuruganathan/astrid-string-selectivity)をフォークしたものです
 
-First, please install the libraries from requirements.txt 
+## 手順
 
-Overall, Astrid-Embed has 4 key steps.
+まず`requirements.txt`に記載されているライブラリをインストールしてください
+
+Astrid-Embedは、全体として重要な4つのステップから構成されています。
 
 
-1. Prepare necessary datasets. The code for processing the raw data into a format Astrid-Embed expects is in prepare_datasets.py. The functions load_and_save_dblp, load_imdb_movie_titles, load_and_save_tpch generates the files. For convenience, they are also put in the datasets folder.
+1. 必要なデータセットを準備します。生データをAstrid-Embedが想定する形式に処理するコードは`prepare_datasets.py`にあります。`load_and_save_dblp`、`load_imdb_movie_titles`、`load_and_save_tpch`の各関数がファイルを生成します。便宜上、これらのファイルも`datasets`フォルダに配置されます。
 
-2. Computing frequencies and triplets. The next step is to create the summary data structure for getting the prefix, suffix and substring frequencies. This is done by prepare_dataset function in prepare_datasets.py. You call it with two arguments dataset_path, dataset_prefix. For e.g. prepare_dataset("datasets/dblp/", "dblp_authors"). Astrid-Embed expects an input file with strings one string each line. So this function looks for dblp_authors.csv in the folder datasets/dblp/. It then generates 6 files. The files dblp_authors_prefix_counts.csv, dblp_authors_substring_counts.csv and dblp_authors_suffix_counts.csv are csv files that contains two columns : string, selectivity. So it stores the raw frequencies of prefix/suffix/substring for dblp_authors.csv. The other three files are dblp_authors_prefix_triplets.csv, dblp_authors_substring_triplets.csv, dblp_authors_suffix_triplets.csv. Each are csv files with three columns: Anchor,Positive,Negative.
+2. 頻度とトリプレットを計算します。次のステップは、接頭辞、接尾辞、部分文字列の頻度を取得するための要約データ構造を作成することです。これは、`prepare_datasets.py`の `prepare_dataset`関数によって行われます。`dataset_path`、`dataset_prefix`の 2 つの引数で呼び出します。たとえば、`prepare_dataset("datasets/dblp/", "dblp_authors")`のように呼び出します。Astrid-Embed は、各行に 1 つの文字列を含む入力ファイルを想定しています。そのため、この関数は`datasets/dblp/`フォルダー内の`dblp_authors.csv`を探します。次に、6 つのファイルを生成します。`dblp_authors_prefix_counts.csv`、`dblp_authors_substring_counts.csv`、`dblp_authors_suffix_counts.csv`は、文字列、選択性の 2 つの列を含む csv ファイルです。そのため、`dblp_authors.csv`の接頭辞/接尾辞/部分文字列の生の頻度を格納します。他の3つのファイルは、`dblp_authors_prefix_triplets.csv`、`dblp_authors_substring_triplets.csv`、`dblp_authors_suffix_triplets.csv`です。それぞれが、Anchor、Positive、Negativeの3つの列を持つCSVファイルです。
 
-3. You have to run the function prepare_dataset for the datasets. The commands are already provided in the prepare_datasets.py. The intermediate files are too large to share in Dropbox/GitHub. Except for IMDB which is very large, these intermediate files can be created in few seconds.
+3. データセットを実行するには、`prepare_dataset`関数を実行する必要があります。コマンドは`prepare_datasets.py`に既に記載されています。中間ファイルはサイズが大きすぎるため、DropboxやGitHubで共有することはできません。ただし、IMDBは非常に大きいため例外ですが、これらの中間ファイルは数秒で作成できます。
 
-4. Learning Embedding Model and Selectivity Models: Astrid-Embed first learns an embedding model from the triplets and then uses a separate model to learn the selectivity. Both these training code are in AstrindEmbed.py. First, you have to alter the function setup_configs with the necessary configurations for training both these models such as the hyper parameters, input and output files. You can then call the main function to train embedding model, selectivity model and test it on a list of strings.
+4. 埋め込みモデルと選択性モデルの学習：Astrid-Embedは、まずトリプレットから埋め込みモデルを学習し、次に別のモデルを使用して選択性を学習します。これらの学習コードは両方とも`AstrindEmbed.py`にあります。まず、ハイパーパラメータ、入力ファイル、出力ファイルなど、両方のモデルを学習するために必要な設定で`setup_configs`関数を変更する必要があります。その後、`main`関数を呼び出して埋め込みモデルと選択性モデルを学習し、文字列のリストでテストできます。
 
-###Comments:
-- AstridEmbed.py: The main function has some code to either train the model from scratch or reload from a previously saved model. For embedding model, this can be done by commenting out either train_astrid_embedding_model or load_embedding_model function. For selectivity estimator, the corresponding functions are train_selectivity_estimator and load_selectivity_estimation_model.
+### Comments:
+- `AstridEmbed.py`: メイン関数には、モデルを最初からトレーニングするか、以前に保存したモデルを再ロードするためのコードが含まれています。埋め込みモデルの場合は、`train_astrid_embedding_model`関数または`load_embedding_model`関数のいずれかをコメントアウトすることで実行できます。選択性推定器の場合は、対応する関数は `train_selectivity_estimator`と`load_selectivity_estimation_model`です。
