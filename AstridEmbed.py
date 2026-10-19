@@ -18,7 +18,7 @@ def setup_configs():
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     embedding_learner_configs = misc_utils.AstridEmbedLearnerConfigs(embedding_dimension=64, batch_size=128,
-        num_epochs=32, margin=0.2, device=device, lr=0.001, channel_size=8)
+        num_epochs=32, margin=0.2, device=device, lr=0.001, channel_size=8, log_by_batch=True)
 
     path = "datasets/dblp/"
     #This assumes that prepare_dataset function was called to output the files.
@@ -36,7 +36,8 @@ def setup_configs():
         #will be updated in train_selectivity_estimator
         min_val=0.0, max_val=1.0,
         embedding_model_file_name = path + file_name_prefix +  "_" +  query_type + "_embedding_model.pth",
-        selectivity_model_file_name = path + file_name_prefix +  "_" +  query_type + "_selectivity_model.pth"
+        selectivity_model_file_name = path + file_name_prefix +  "_" +  query_type + "_selectivity_model.pth",
+        log_by_batch = True
         )
 
     return embedding_learner_configs, frequency_configs, selectivity_learner_configs

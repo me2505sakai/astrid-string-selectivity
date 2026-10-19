@@ -58,7 +58,7 @@ def train_embedding_model(configs, train_loader, string_helper):
     for epoch in tqdm(range(configs.num_epochs), desc="Epochs"):
     #for epoch in range(epochs):
         running_loss = []
-        for step, (anchor, positive, negative) in enumerate(tqdm(train_loader, desc="Training", leave=False)):
+        for step, (anchor, positive, negative) in enumerate(tqdm(train_loader, desc="Training", leave=False, disable=not configs.log_by_batch)):
         #for step, (anchor, positive, negative) in enumerate(train_loader):
             anchor = anchor.to(device)
             positive = positive.to(device)

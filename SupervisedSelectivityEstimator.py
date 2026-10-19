@@ -61,7 +61,7 @@ def train_selEst_model(configs, train_loader,  string_helper):
 
     for epoch in tqdm(range(configs.num_epochs), desc="Epochs", position=0, leave=False):
         running_loss = []
-        for batch_idx, (string_queries, true_selectivities) in enumerate(tqdm(train_loader, desc="Training", leave=False)):
+        for batch_idx, (string_queries, true_selectivities) in enumerate(tqdm(train_loader, desc="Training", leave=False, disable=not configs.log_by_batch)):
         #for batch_idx, output in enumerate(tqdm(train_loader, desc="Training", leave=False)):
             string_queries = string_queries.to(device)
 
