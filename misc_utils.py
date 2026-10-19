@@ -12,7 +12,7 @@ from string_dataset_helpers import StringDatasetHelper
 #channel_size: how many channels of information needed for Conv1D function. 8 is a good value
 AstridEmbedLearnerConfigs = namedtuple('AstridEmbedLearnerConfigs',
     ['embedding_dimension', 'batch_size', 'num_epochs', 'margin', 'device', 'lr',
-    'channel_size'])
+    'channel_size', 'log_by_batch'])
 
 #StringFrequencyConfigs contains the info needed for extracting vocabulary and training embedding model.
 #string_list_file_name => list of strings one in each line.
@@ -28,7 +28,8 @@ StringFrequencyConfigs = namedtuple('StringFrequencyConfigs',
 SelectivityEstimatorConfigs = namedtuple('SelectivityEstimatorConfigs',
     ['embedding_dimension', 'batch_size', 'num_epochs', 'device', 'lr',
     'min_val', 'max_val',
-    'embedding_model_file_name', 'selectivity_model_file_name'])
+    'embedding_model_file_name', 'selectivity_model_file_name',
+    'log_by_batch'])
 
 def initialize_random_seeds(seed_val=1234):
     torch.manual_seed(seed_val)
