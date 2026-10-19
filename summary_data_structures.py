@@ -42,13 +42,15 @@ class SummaryDataStructure:
     #and outputs a list of "substrings" of interest.
     #for e.g. all prefixes, suffixes,
     #max_str_size: will be the largest prefix, substring, suffix string that will be created
-    def __init__(self, string_generator_fn, max_str_size=MAX_STR_SIZE):
+    #split_words: whether to ignore spaces in a string.
+    #if split_words is true, then "a b" will be inserted as two words a b .. else one word with space.
+    def __init__(self, string_generator_fn, max_str_size=MAX_STR_SIZE, split_words=True):
         self.string_generator_fn = string_generator_fn
         self.max_str_size = max_str_size
+        self.split_words = split_words
         self.root_node = SummaryDSNode('')
 
-    def insert_string(self, string):
-        substrings_of_interest = self.string_generator_fn(string)
+    def insert_string(self, substrings_of_interest):
         for substring in substrings_of_interest:
             cur_node = self.root_node
             for index, char in enumerate(substring):
@@ -64,8 +66,12 @@ class SummaryDataStructure:
     def update_summary_ds_from_file(self, input_file_name):
         with open(input_file_name) as f:
             for line in f:
-                string = line.strip()
-                self.insert_string(string)
+                strings = [line.strip()]
+                if self.split_words:
+                    strings = line.strip().split()
+                substrings_of_interest = self.string_generator_fn(strings)
+                for substring_of_interest in substrings_of_interest:
+                    self.insert_string(substring_of_interest)
 
     #returns a data frame with all the strings in the summary data structure and its frequencies
     def get_selectivities(self):
@@ -148,40 +154,38 @@ class SummaryDataStructure:
             print("%s%s:%d" % (pre, node.name, node.frequency))
 
 
-def get_all_prefixes(string, max_size=MAX_STR_SIZE):
-    arr = []
-    words = string.split()
-    for word in words:
-        arr.extend([word[:j] for j in range(1, min(max_size, len(word)) + 1)])
-    return arr
+def get_all_prefixes(strings, max_size=MAX_STR_SIZE):
+    return [
+        string[:j]
+        for string in strings
+        for j in range(1, min(max_size, len(string)) + 1)
+    ]
 
-def get_unique_prefixes(string, max_size=MAX_STR_SIZE):
-    return list(set(get_all_prefixes(string, max_size=MAX_STR_SIZE)))
+def get_unique_prefixes(strings, max_size=MAX_STR_SIZE):
+    return list(set(get_all_prefixes(strings, max_size)))
 
-def get_all_suffixes(string, max_size=MAX_STR_SIZE):
-    arr = []
-    words = string.split()
-    for word in words:
-        arr.extend([word[-j:] for j in range(1, min(max_size, len(word)) + 1)])
-    return arr
+def get_all_suffixes(strings, max_size=MAX_STR_SIZE):
+    return [
+        string[-j:]
+        for string in strings
+        for j in range(1, min(max_size, len(string)) + 1)
+    ]
 
-def get_unique_suffixes(string, max_size=MAX_STR_SIZE):
-    return list(set(get_all_suffixes(string, max_size=MAX_STR_SIZE)))
+def get_unique_suffixes(strings, max_size=MAX_STR_SIZE):
+    return list(set(get_all_suffixes(strings, max_size)))
 
-def get_all_substrings(string, max_size=MAX_STR_SIZE):
-    arr = []
-    n = len(string)
-    for i in range(0,n):
-        for j in range(i,n):
-            if (j+1 - i) <= max_size:
-                arr.append(string[i:(j+1)])
-    return arr
+def get_all_substrings(strings, max_size=MAX_STR_SIZE):
+    return [
+        string[i : i + length]
+        for string in strings
+        for i in range(len(string))
+        for length in range(1, min(max_size, len(string) - i) + 1)
+    ]
 
-def get_unique_substrings(string, max_size=MAX_STR_SIZE):
-    return list(set(get_all_substrings(string, max_size=MAX_STR_SIZE)))
+def get_unique_substrings(strings, max_size=MAX_STR_SIZE):
+    return list(set(get_all_substrings(strings, max_size)))
 
 #Naive way to compute all strings of interest that avoids the use of summary data structures
-#使用に注意:get_unique_substirngsに相当するような集計を行う処理が未実装で更新が未完であるためにsplit_wordsなどが残っている
 def aggregate_strings_of_interest(input_file_name, string_agg_fn,
     max_size=MAX_STR_SIZE, split_words=True, output_file_name=None):
     string_frequency_dict = defaultdict(int)
