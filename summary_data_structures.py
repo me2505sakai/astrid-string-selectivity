@@ -175,6 +175,7 @@ def get_unique_suffixes(strings, max_size=MAX_STR_SIZE):
     return list(set(get_all_suffixes(strings, max_size)))
 
 def get_all_substrings(strings, max_size=MAX_STR_SIZE):
+    print(f"[get_all_substr()]:{strings}, max_size:{max_size}")
     return [
         string[i : i + length]
         for string in strings
