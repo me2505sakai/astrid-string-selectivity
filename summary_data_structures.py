@@ -69,7 +69,7 @@ class SummaryDataStructure:
                 strings = [line.strip()]
                 if self.split_words:
                     strings = line.strip().split()
-                substrings_of_interest = self.string_generator_fn(strings)
+                substrings_of_interest = self.string_generator_fn(strings, self.max_str_size)
                 for substring_of_interest in substrings_of_interest:
                     self.insert_string(substring_of_interest)
 
