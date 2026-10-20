@@ -70,8 +70,9 @@ class SummaryDataStructure:
                 if self.split_words:
                     strings = line.strip().split()
                 substrings_of_interest = self.string_generator_fn(strings, self.max_str_size)
-                for substring_of_interest in substrings_of_interest:
-                    self.insert_string(substring_of_interest)
+                # print(f"[update_summary_ds()]:{substrings_of_interest}")
+                # for substring_of_interest in substrings_of_interest:
+                self.insert_string(substrings_of_interest)
 
     #returns a data frame with all the strings in the summary data structure and its frequencies
     def get_selectivities(self):
@@ -175,7 +176,6 @@ def get_unique_suffixes(strings, max_size=MAX_STR_SIZE):
     return list(set(get_all_suffixes(strings, max_size)))
 
 def get_all_substrings(strings, max_size=MAX_STR_SIZE):
-    print(f"[get_all_substr()]:{strings}, max_size:{max_size}")
     return [
         string[i : i + length]
         for string in strings
