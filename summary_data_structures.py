@@ -70,8 +70,6 @@ class SummaryDataStructure:
                 if self.split_words:
                     strings = line.strip().split()
                 substrings_of_interest = self.string_generator_fn(strings, self.max_str_size)
-                # print(f"[update_summary_ds()]:{substrings_of_interest}")
-                # for substring_of_interest in substrings_of_interest:
                 self.insert_string(substrings_of_interest)
 
     #returns a data frame with all the strings in the summary data structure and its frequencies
