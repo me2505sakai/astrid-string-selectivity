@@ -56,9 +56,12 @@ def load_and_save_tpch():
 #dblp_authors_prefix_count, dblp_authors_prefix_triplets contain the frequencies and triplets respectively
 def prepare_dataset(folder_path, dataset_prefix):
     print("Processing ", dataset_prefix)
-    functions = [summary_data_structures.get_all_prefixes, summary_data_structures.get_all_suffixes,
-        summary_data_structures.get_all_substrings]
-    function_desc = ["prefix", "suffix", "substring"]
+    functions = [
+        summary_data_structures.get_all_prefixes, summary_data_structures.get_unique_prefixes,
+        summary_data_structures.get_all_suffixes, summary_data_structures.get_unique_suffixes, 
+        summary_data_structures.get_all_substrings, summary_data_structures.get_unique_substrings 
+        ]
+    function_desc = ["prefix", "unique-prefix", "suffix", "unique-suffix", "substring", "unique-substring"]
     input_file_name = folder_path + dataset_prefix + ".csv"
     for index, fn in enumerate(functions):
         count_file_name = folder_path + dataset_prefix + "_" + function_desc[index] + "_counts.csv"

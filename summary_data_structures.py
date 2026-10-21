@@ -50,8 +50,7 @@ class SummaryDataStructure:
         self.split_words = split_words
         self.root_node = SummaryDSNode('')
 
-    def insert_string(self, string):
-        substrings_of_interest = self.string_generator_fn(string)
+    def insert_string(self, substrings_of_interest):
         for substring in substrings_of_interest:
             cur_node = self.root_node
             for index, char in enumerate(substring):
@@ -70,8 +69,8 @@ class SummaryDataStructure:
                 strings = [line.strip()]
                 if self.split_words:
                     strings = line.strip().split()
-                for string in strings:
-                    self.insert_string(string)
+                substrings_of_interest = self.string_generator_fn(strings, self.max_str_size)
+                self.insert_string(substrings_of_interest)
 
     #returns a data frame with all the strings in the summary data structure and its frequencies
     def get_selectivities(self):
@@ -154,20 +153,36 @@ class SummaryDataStructure:
             print("%s%s:%d" % (pre, node.name, node.frequency))
 
 
-def get_all_prefixes(string, max_size=MAX_STR_SIZE):
-    return [string[:j] for j in range(1, min(max_size, len(string)) + 1)]
+def get_all_prefixes(strings, max_size=MAX_STR_SIZE):
+    return [
+        string[:j]
+        for string in strings
+        for j in range(1, min(max_size, len(string)) + 1)
+    ]
 
-def get_all_suffixes(string, max_size=MAX_STR_SIZE):
-    return [string[-j:] for j in range(1, min(max_size, len(string)) + 1)]
+def get_unique_prefixes(strings, max_size=MAX_STR_SIZE):
+    return list(set(get_all_prefixes(strings, max_size)))
 
-def get_all_substrings(string, max_size=MAX_STR_SIZE):
-    arr = []
-    n = len(string)
-    for i in range(0,n):
-        for j in range(i,n):
-            if (j+1 - i) <= max_size:
-                arr.append(string[i:(j+1)])
-    return arr
+def get_all_suffixes(strings, max_size=MAX_STR_SIZE):
+    return [
+        string[-j:]
+        for string in strings
+        for j in range(1, min(max_size, len(string)) + 1)
+    ]
+
+def get_unique_suffixes(strings, max_size=MAX_STR_SIZE):
+    return list(set(get_all_suffixes(strings, max_size)))
+
+def get_all_substrings(strings, max_size=MAX_STR_SIZE):
+    return [
+        string[i : i + length]
+        for string in strings
+        for i in range(len(string))
+        for length in range(1, min(max_size, len(string) - i) + 1)
+    ]
+
+def get_unique_substrings(strings, max_size=MAX_STR_SIZE):
+    return list(set(get_all_substrings(strings, max_size)))
 
 #Naive way to compute all strings of interest that avoids the use of summary data structures
 def aggregate_strings_of_interest(input_file_name, string_agg_fn,
