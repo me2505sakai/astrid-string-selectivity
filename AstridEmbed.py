@@ -20,25 +20,26 @@ def setup_configs():
     embedding_learner_configs = misc_utils.AstridEmbedLearnerConfigs(embedding_dimension=64, batch_size=128,
         num_epochs=32, margin=0.2, device=device, lr=0.001, channel_size=8, log_by_batch=True)
 
-    path = "datasets/dblp/"
+    dataset_path = "datasets/dblp/"
+    output_path = "outputs/00/"
     #This assumes that prepare_dataset function was called to output the files.
     #If not, please change the file names appropriately
     file_name_prefix = "dblp_titles"
     query_type = "prefix"
     frequency_configs = misc_utils.StringFrequencyConfigs(
-        string_list_file_name= path + file_name_prefix + ".csv",
-        selectivity_file_name= path + file_name_prefix +  "_" +  query_type + "_counts.csv",
-        triplets_file_name= path + file_name_prefix +  "_" +  query_type + "_triplets.csv"
+        string_list_file_name= dataset_path + file_name_prefix + ".csv",
+        selectivity_file_name= dataset_path + file_name_prefix +  "_" +  query_type + "_counts.csv",
+        triplets_file_name= dataset_path + file_name_prefix +  "_" +  query_type + "_triplets.csv"
     )
 
     selectivity_learner_configs = misc_utils.SelectivityEstimatorConfigs(
         embedding_dimension=64, batch_size=128, num_epochs=64, device=device, lr=0.001,
         #will be updated in train_selectivity_estimator
         min_val=0.0, max_val=1.0,
-        embedding_model_file_name = path + file_name_prefix +  "_" +  query_type + "_embedding_model.pth",
-        selectivity_model_file_name = path + file_name_prefix +  "_" +  query_type + "_selectivity_model.pth",
-        embedding_log_file_name = path + file_name_prefix +  "_" +  query_type + "_embedding_log.csv",
-        selectivity_log_file_name = path + file_name_prefix +  "_" +  query_type + "_selectivity_log.csv",
+        embedding_model_file_name = output_path + file_name_prefix +  "_" +  query_type + "_embedding_model.pth",
+        selectivity_model_file_name = output_path + file_name_prefix +  "_" +  query_type + "_selectivity_model.pth",
+        embedding_log_file_name = output_path + file_name_prefix +  "_" +  query_type + "_embedding_log.csv",
+        selectivity_log_file_name = output_path + file_name_prefix +  "_" +  query_type + "_selectivity_log.csv",
         log_by_batch = True
         )
 
