@@ -37,6 +37,8 @@ def setup_configs():
         min_val=0.0, max_val=1.0,
         embedding_model_file_name = path + file_name_prefix +  "_" +  query_type + "_embedding_model.pth",
         selectivity_model_file_name = path + file_name_prefix +  "_" +  query_type + "_selectivity_model.pth",
+        embedding_log_file_name = path + file_name_prefix +  "_" +  query_type + "_embedding_log.csv",
+        selectivity_log_file_name = path + file_name_prefix +  "_" +  query_type + "_selectivity_log.csv",
         log_by_batch = True
         )
 
@@ -45,7 +47,7 @@ def setup_configs():
 
 
 #This function trains and returns the embedding model
-def train_astrid_embedding_model(string_helper, model_output_file_name=None):
+def train_astrid_embedding_model(string_helper, model_output_file_name=None, log_output_file_name=None):
     global embedding_learner_configs, frequency_configs
 
     #Some times special strings such as nan or those that start with a number confuses Pandas
@@ -57,7 +59,7 @@ def train_astrid_embedding_model(string_helper, model_output_file_name=None):
     triplet_dataset = TripletStringDataset(df, string_helper)
     train_loader = DataLoader(triplet_dataset, batch_size=embedding_learner_configs.batch_size, shuffle=True)
 
-    embedding_model = EmbeddingLearner.train_embedding_model(embedding_learner_configs, train_loader, string_helper)
+    embedding_model = EmbeddingLearner.train_embedding_model(embedding_learner_configs, train_loader, string_helper, log_output_file_name)
     if model_output_file_name is not None:
         torch.save(embedding_model.state_dict(), model_output_file_name)
     return embedding_model
@@ -77,13 +79,13 @@ def compute_normalized_selectivities(df):
 
 
 #This function trains and returns the selectivity estimator.
-def train_selectivity_estimator(train_df, string_helper, embedding_model, model_output_file_name=None):
+def train_selectivity_estimator(train_df, string_helper, embedding_model, model_output_file_name=None, log_output_file_name=None):
     global selectivity_learner_configs, frequency_configs
 
     string_dataset = StringSelectivityDataset(train_df, string_helper, embedding_model)
     train_loader = DataLoader(string_dataset, batch_size=selectivity_learner_configs.batch_size, shuffle=True)
 
-    selectivity_model = SupervisedSelectivityEstimator.train_selEst_model(selectivity_learner_configs, train_loader, string_helper)
+    selectivity_model = SupervisedSelectivityEstimator.train_selEst_model(selectivity_learner_configs, train_loader, string_helper, log_output_file_name)
     if model_output_file_name is not None:
         torch.save(selectivity_model.state_dict(), model_output_file_name)
     return selectivity_model
@@ -134,12 +136,14 @@ def main():
 
     embedding_model_file_name = selectivity_learner_configs.embedding_model_file_name
     selectivity_model_file_name = selectivity_learner_configs.selectivity_model_file_name
+    embedding_log_file_name = selectivity_learner_configs.embedding_log_file_name
+    selectivity_log_file_name = selectivity_learner_configs.selectivity_log_file_name
 
     string_helper = misc_utils.setup_vocabulary(frequency_configs.string_list_file_name)
 
     #You can comment/uncomment the following lines based on whether you
     # want to train from scratch or just reload a previously trained embedding model.
-    embedding_model = train_astrid_embedding_model(string_helper, embedding_model_file_name)
+    embedding_model = train_astrid_embedding_model(string_helper, embedding_model_file_name, embedding_log_file_name)
     #embedding_model = load_embedding_model(embedding_model_file_name, string_helper)
 
     #Load the input file and split into 50-50 train, test split
@@ -154,7 +158,7 @@ def main():
     #You can comment/uncomment the following lines based on whether you
     # want to train from scratch or just reload a previously trained embedding model.
     selectivity_model = train_selectivity_estimator(train_df, string_helper,
-        embedding_model, selectivity_model_file_name)
+        embedding_model, selectivity_model_file_name, selectivity_log_file_name)
     #selectivity_model = load_selectivity_estimation_model(selectivity_model_file_name, string_helper)
 
     #Get the predictions from the learned model and compute basic summary statistics
