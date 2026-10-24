@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
 import misc_utils
+import pandas as pd
 
 
 #We choose a simple DL model.
