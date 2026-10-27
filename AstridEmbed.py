@@ -2,6 +2,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 import torch
 from torch.utils.data import DataLoader
+import os
 import pandas as pd
 import misc_utils
 from string_dataset_helpers import TripletStringDataset, StringSelectivityDataset
@@ -22,6 +23,13 @@ def setup_configs():
 
     dataset_path = "datasets/dblp/"
     output_path = "outputs/00/"
+
+    # mkDir for output if not exists
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+    if not os.path.exists(dataset_path):
+        os.makedirs(dataset_path)
+
     #This assumes that prepare_dataset function was called to output the files.
     #If not, please change the file names appropriately
     file_name_prefix = "dblp_titles"
