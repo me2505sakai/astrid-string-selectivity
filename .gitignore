@@ -130,3 +130,8 @@ dmypy.json
 
 # outputfolder
 outputs/
+
+# datasets
+datasets/
+dblp50000.xml
+dblp50000.xml:Zone.Identifier
