@@ -143,7 +143,7 @@ def main():
     #embedding_model = load_embedding_model(embedding_model_file_name, string_helper)
 
     #Load the input file and split into 50-50 train, test split
-    df = pd.read_csv(frequency_configs.selectivity_file_name)
+    df = pd.read_csv(frequency_configs.selectivity_file_name, keep_default_na=False)
     #Some times strings that start with numbers or
     # special strings such as nan which confuses Pandas' type inference algorithm
     df["string"] = df["string"].astype(str)
