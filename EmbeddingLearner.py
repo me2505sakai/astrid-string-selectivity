@@ -3,6 +3,7 @@ import numpy as np
 import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
+import pandas as pd
 
 
 
@@ -43,7 +44,7 @@ class EmbeddingCNNNetwork(nn.Module):
         return x
 
 
-def train_embedding_model(configs, train_loader, string_helper):
+def train_embedding_model(configs, train_loader, string_helper, log_output_file_path):
     model = EmbeddingCNNNetwork(string_helper, configs)
     #Comment this line during experimentation.
     #model = torch.jit.script(model)
@@ -54,10 +55,14 @@ def train_embedding_model(configs, train_loader, string_helper):
 
     device = configs.device
 
-    model.train()
+    # for logging
+    history = []
+
     for epoch in tqdm(range(configs.num_epochs), desc="Epochs"):
-    #for epoch in range(epochs):
-        running_loss = []
+        # learning phase
+        model.train()
+        running_train_loss = []
+
         for step, (anchor, positive, negative) in enumerate(tqdm(train_loader, desc="Training", leave=False, disable=not configs.log_by_batch)):
         #for step, (anchor, positive, negative) in enumerate(train_loader):
             anchor = anchor.to(device)
@@ -72,7 +77,19 @@ def train_embedding_model(configs, train_loader, string_helper):
             loss = criterion(anchor_out, positive_out, negative_out)
             loss.backward()
             optimizer.step()
-            running_loss.append(loss.cpu().detach().numpy())
-        print("Epoch: {}/{} - Mean Running Loss: {:.4f}".format(epoch+1, configs.num_epochs, np.mean(running_loss)))
+            running_train_loss.append(loss.item())
+
+        mean_train_loss = np.mean(running_train_loss)
+
+        print(f"Epoch: {epoch+1}/{configs.num_epochs} - Train Loss: {mean_train_loss:.4f}")
+
+        history.append({
+            "epoch": epoch + 1,
+            "train_loss": mean_train_loss
+        })
+
+    log_df = pd.DataFrame(history)
+    log_df.to_csv(log_output_file_path, index=False)
+    print(f"Training log successfully saved to {log_output_file_path}")
 
     return model

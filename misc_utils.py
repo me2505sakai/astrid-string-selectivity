@@ -29,6 +29,7 @@ SelectivityEstimatorConfigs = namedtuple('SelectivityEstimatorConfigs',
     ['embedding_dimension', 'batch_size', 'num_epochs', 'device', 'lr',
     'min_val', 'max_val',
     'embedding_model_file_name', 'selectivity_model_file_name',
+    'embedding_log_file_name', 'selectivity_log_file_name',
     'log_by_batch'])
 
 def initialize_random_seeds(seed_val=1234):

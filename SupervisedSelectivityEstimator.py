@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
 import misc_utils
+import pandas as pd
 
 
 #We choose a simple DL model.
@@ -48,7 +49,7 @@ class SelectivityEstimator(nn.Module):
 
 
 
-def train_selEst_model(configs, train_loader,  string_helper):
+def train_selEst_model(configs, train_loader,  string_helper, log_output_file_path):
     model = SelectivityEstimator(string_helper, configs)
     #Comment this line during experimentation.
     #model = torch.jit.script(model)
@@ -57,10 +58,14 @@ def train_selEst_model(configs, train_loader,  string_helper):
     optimizer = optim.Adam(model.parameters(), lr=configs.lr)
     device = configs.device
 
-    model.train()
+    # for logging
+    history = []
 
     for epoch in tqdm(range(configs.num_epochs), desc="Epochs", position=0, leave=False):
-        running_loss = []
+        # learning phase
+        model.train()
+        running_train_loss = []
+
         for batch_idx, (string_queries, true_selectivities) in enumerate(tqdm(train_loader, desc="Training", leave=False, disable=not configs.log_by_batch)):
         #for batch_idx, output in enumerate(tqdm(train_loader, desc="Training", leave=False)):
             string_queries = string_queries.to(device)
@@ -71,8 +76,20 @@ def train_selEst_model(configs, train_loader,  string_helper):
 
             loss.backward()
             optimizer.step()
-            running_loss.append(loss.cpu().detach().numpy())
-        print("Epoch: {}/{} - Mean Running Loss: {:.4f}".format(epoch+1, configs.num_epochs, np.mean(running_loss)))
-        print("Summary stats of Loss: Percentile: [0.75, 0.9, 0.95, 0.99] ", [np.quantile(running_loss, q) for q in [0.75, 0.9, 0.95, 0.99]])
+            running_train_loss.append(loss.item())
+
+        mean_train_loss = np.mean(running_train_loss)
+
+        print(f"Epoch: {epoch+1}/{configs.num_epochs} - Train Loss: {mean_train_loss:.4f}")
+        print("Summary stats of Loss: Percentile: [0.75, 0.9, 0.95, 0.99] ", [np.quantile(running_train_loss, q) for q in [0.75, 0.9, 0.95, 0.99]])
+
+        history.append({
+            "epoch": epoch + 1,
+            "train_loss": mean_train_loss
+        })
+
+    log_df = pd.DataFrame(history)
+    log_df.to_csv(log_output_file_path, index=False)
+    print(f"Training log successfully saved to {log_output_file_path}")
 
     return model
