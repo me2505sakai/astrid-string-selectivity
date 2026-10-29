@@ -182,15 +182,18 @@ def main():
     df["predicted_denormalized_selectivity"] = denormalized_predictions
 
     actuals = torch.tensor(df["normalized_selectivities"].values)
-    df["q_error"] = misc_utils.compute_qerrors(
+    q_error_tensor = misc_utils.compute_qerrors(
         normalized_predictions,
         actuals,
         selectivity_learner_configs.min_val,
         selectivity_learner_configs.max_val
     )
+    if hasattr(q_errors_tensor, "detach"):
+        q_errors_tensor = q_errors_tensor.detach().cpu().numpy()
+    df["q_error"] = q_errors_tensor
     
     df.to_csv(prediction_file_name, index=True, index_label="index")
-    print(f"全データの予測結果を保存しました: {prediction_file_name}")
+    print(f"Prediction file successfully saved to {prediction_file_name}")
 
     for split_name, mask in [("Train", df["is_train"]), ("Test", ~df["is_train"])]:
         q_errors = df.loc[mask, "q_error"].values
