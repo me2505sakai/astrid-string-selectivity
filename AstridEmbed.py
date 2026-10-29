@@ -155,7 +155,7 @@ def main():
     #You can comment/uncomment the following lines based on whether you
     # want to train from scratch or just reload a previously trained embedding model.
     embedding_model = train_astrid_embedding_model(string_helper, embedding_model_file_name, embedding_log_file_name)
-    #embedding_model = load_embedding_model(embedding_model_file_name, string_helper)
+    # embedding_model = load_embedding_model(embedding_model_file_name, string_helper)
 
     #Load the input file and split into 50-50 train, test split
     df = pd.read_csv(frequency_configs.selectivity_file_name, keep_default_na=False)
@@ -172,7 +172,7 @@ def main():
     # want to train from scratch or just reload a previously trained embedding model.
     selectivity_model = train_selectivity_estimator(train_df, string_helper,
         embedding_model, selectivity_model_file_name, selectivity_log_file_name)
-    #selectivity_model = load_selectivity_estimation_model(selectivity_model_file_name, string_helper)
+    # selectivity_model = load_selectivity_estimation_model(selectivity_model_file_name, string_helper)
 
     #Get the predictions from the learned model and compute basic summary statistics
     normalized_predictions, denormalized_predictions = get_selectivity_for_strings(
@@ -182,7 +182,7 @@ def main():
     df["predicted_denormalized_selectivity"] = denormalized_predictions
 
     actuals = torch.tensor(df["normalized_selectivities"].values)
-    q_error_tensor = misc_utils.compute_qerrors(
+    q_errors_tensor = misc_utils.compute_qerrors(
         normalized_predictions,
         actuals,
         selectivity_learner_configs.min_val,
