@@ -48,6 +48,7 @@ def setup_configs():
         selectivity_model_file_name = output_path + file_name_prefix +  "_" +  query_type + "_selectivity_model.pth",
         embedding_log_file_name = output_path + file_name_prefix +  "_" +  query_type + "_embedding_log.csv",
         selectivity_log_file_name = output_path + file_name_prefix +  "_" +  query_type + "_selectivity_log.csv",
+        prediction_file_name = output_path + file_name_prefix +  "_" +  query_type + "_prediction.csv",
         log_by_batch = True
         )
 
@@ -147,13 +148,14 @@ def main():
     selectivity_model_file_name = selectivity_learner_configs.selectivity_model_file_name
     embedding_log_file_name = selectivity_learner_configs.embedding_log_file_name
     selectivity_log_file_name = selectivity_learner_configs.selectivity_log_file_name
+    prediction_file_name = selectivity_learner_configs.prediction_file_name
 
     string_helper = misc_utils.setup_vocabulary(frequency_configs.string_list_file_name)
 
     #You can comment/uncomment the following lines based on whether you
     # want to train from scratch or just reload a previously trained embedding model.
     embedding_model = train_astrid_embedding_model(string_helper, embedding_model_file_name, embedding_log_file_name)
-    #embedding_model = load_embedding_model(embedding_model_file_name, string_helper)
+    # embedding_model = load_embedding_model(embedding_model_file_name, string_helper)
 
     #Load the input file and split into 50-50 train, test split
     df = pd.read_csv(frequency_configs.selectivity_file_name, keep_default_na=False)
@@ -162,23 +164,42 @@ def main():
     df["string"] = df["string"].astype(str)
     df = compute_normalized_selectivities(df)
     train_indices, test_indices = train_test_split(df.index, random_state=random_seed, test_size=0.5)
+
+    df["is_train"] = df.index.isin(train_indices)
     train_df, test_df = df.iloc[train_indices], df.iloc[test_indices]
 
     #You can comment/uncomment the following lines based on whether you
     # want to train from scratch or just reload a previously trained embedding model.
     selectivity_model = train_selectivity_estimator(train_df, string_helper,
         embedding_model, selectivity_model_file_name, selectivity_log_file_name)
-    #selectivity_model = load_selectivity_estimation_model(selectivity_model_file_name, string_helper)
+    # selectivity_model = load_selectivity_estimation_model(selectivity_model_file_name, string_helper)
 
     #Get the predictions from the learned model and compute basic summary statistics
     normalized_predictions, denormalized_predictions = get_selectivity_for_strings(
-        test_df["string"].values, embedding_model, selectivity_model, string_helper)
-    actual = torch.tensor(test_df["normalized_selectivities"].values)
-    test_q_error = misc_utils.compute_qerrors(normalized_predictions, actual,
-        selectivity_learner_configs.min_val, selectivity_learner_configs.max_val)
-    print("Test data: Mean q-error loss ", np.mean(test_q_error))
-    print("Test data: Summary stats of Loss: Percentile: [0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99] ", [np.quantile(test_q_error, q) for q in [0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]])
+        df["string"].values, embedding_model, selectivity_model, string_helper)
+    
+    df["predicted_normalized_selectivity"] = normalized_predictions
+    df["predicted_denormalized_selectivity"] = denormalized_predictions
 
+    actuals = torch.tensor(df["normalized_selectivities"].values)
+    q_errors = misc_utils.compute_qerrors(
+        normalized_predictions,
+        actuals,
+        selectivity_learner_configs.min_val,
+        selectivity_learner_configs.max_val
+    )
+    df["q_error"] = q_errors
+    
+    df.to_csv(prediction_file_name, index=True, index_label="index")
+    print(f"Prediction file successfully saved to {prediction_file_name}")
+
+    for split_name, mask in [("Train", df["is_train"]), ("Test", ~df["is_train"])]:
+        q_errors = df.loc[mask, "q_error"].values
+
+        print(f"\n--- {split_name} Data ---")
+        print("Mean q-error loss:", np.mean(q_errors))
+        print("Percentiles [0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]:", 
+            [np.quantile(q_errors, q) for q in [0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]])
 
 if __name__ == "__main__":
     main()

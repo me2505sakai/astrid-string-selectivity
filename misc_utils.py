@@ -30,6 +30,7 @@ SelectivityEstimatorConfigs = namedtuple('SelectivityEstimatorConfigs',
     'min_val', 'max_val',
     'embedding_model_file_name', 'selectivity_model_file_name',
     'embedding_log_file_name', 'selectivity_log_file_name',
+    'prediction_file_name',
     'log_by_batch'])
 
 def initialize_random_seeds(seed_val=1234):
@@ -87,7 +88,7 @@ def compute_qerrors(preds=None, targets=None, min_val=0.0, max_val=1.0):
 
     for i in range(len(targets)):
         if (preds[i] > targets[i]).cpu().data.numpy()[0]:
-            qerror.append(preds[i] / targets[i])
+            qerror.append((preds[i] / targets[i]).item())
         else:
-            qerror.append(targets[i] / preds[i])
+            qerror.append((targets[i] / preds[i]).item())
     return qerror
