@@ -62,6 +62,12 @@ def prepare_dataset(folder_path, dataset_prefix):
         summary_data_structures.get_all_substrings, summary_data_structures.get_unique_substrings 
         ]
     function_desc = ["prefix", "unique-prefix", "suffix", "unique-suffix", "substring", "unique-substring"]
+    preprocess_functions = [
+        preprocess00_count_file,
+        preprocess01_count_file,
+        preprocess02_count_file
+        ]
+    preprocess_desc = ["no-preprcs", "2024preprcs", "2025preprcs"]
     input_file_name = folder_path + dataset_prefix + ".csv"
     for index, fn in enumerate(functions):
         count_file_name = folder_path + dataset_prefix + "_" + function_desc[index] + "_counts.csv"
@@ -72,6 +78,41 @@ def prepare_dataset(folder_path, dataset_prefix):
         #tree.print_tree()
         summary_data_structures.store_selectivities(tree, count_file_name)
         summary_data_structures.store_triplets(tree, triplet_file_name)
+
+        for preprocess_index, preprocess_fn in enumerate(preprocess_functions):
+            preprocessed_file_name = folder_path + dataset_prefix + "_" + function_desc[index] + "_" + preprocess_desc[preprocess_index] + "_counts.csv"
+            preprocess_fn(count_file_name, preprocessed_file_name)
+
+
+def preprocess00_count_file(count_file_name, output_file_name):
+    # dummy preprocess. This change file name only.
+    df = pd.read_csv(count_file_name, keep_default_na=False)
+    df.to_csv(output_file_name, index=False, encoding='utf-8')
+
+
+def preprocess01_count_file(count_file_name, output_file_name):
+    # print("Preprocessing ",count_file_name)
+    df = pd.read_csv(count_file_name, keep_default_na=False)
+
+    condition = (df['string'].str.len() >= 3) & (df['selectivity'] >= 100)
+    matched_rows = df[condition]
+    replicated_df = pd.concat([df] + [matched_rows] * 100, ignore_index=True)
+
+    replicated_df.to_csv(output_file_name, index=False, encoding='utf-8')
+
+def preprocess02_count_file(count_file_name, output_file_name):
+    from math import log10
+    from math import 
+    # print("Preprocessing ",count_file_name)
+    df = pd.read_csv(count_file_name, keep_default_na=False)
+
+    string_lengths = df['string'].astype(str).str.len()
+    selectivity_digits = df['selectivity'].astype(str).str.len()
+    replication_counts = string_lengths * selectivity_digits
+    replicated_df = df.loc[df.index.repeat(replication_counts)].reset_index(drop=True)
+
+    replicated_df.to_csv(output_file_name, index=False, encoding='utf-8')
+
 
 
 #The following functions generate the raw files for 4 datasets.
