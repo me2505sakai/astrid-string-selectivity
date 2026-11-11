@@ -43,7 +43,7 @@ def setup_configs(
     selectivity_defaults = {
         "embedding_dimension":64,
         "batch_size":128,
-        "num_epoch":64,
+        "num_epochs":64,
         "lr":0.001,
         "min_val":0.0,
         "max_val":1.0,
@@ -74,9 +74,8 @@ def setup_configs(
     )
 
     selectivity_learner_configs = misc_utils.SelectivityEstimatorConfigs(
-        device=device
+        device=device,
         #will be updated in train_selectivity_estimator
-        min_val=0.0, max_val=1.0,
         embedding_model_file_name = output_path + file_name_prefix +  "_" +  query_type + "_embedding_model.pth",
         selectivity_model_file_name = output_path + file_name_prefix +  "_" +  query_type + "_" +  preprocess_desc + "_selectivity_model.pth",
         embedding_log_file_name = output_path + file_name_prefix +  "_" +  query_type + "_embedding_log.csv",
@@ -212,7 +211,7 @@ def run_experiment(
         "output_path":output_path,
         "file_name_prefix":file_name_prefix,
         "query_type":query_type,
-        "preprocess_desc":preprocess_desc
+        "preprocess_desc":preprocess_desc,
         "embedding_learner_config":embedding_learner_configs._asdict(),
         "selectivity_learner_configs":selectivity_learner_configs._asdict(),
         "frequency_configs":frequency_configs._asdict()
