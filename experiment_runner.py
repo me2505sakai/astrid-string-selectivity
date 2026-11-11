@@ -36,25 +36,25 @@ from AstridEmbed import run_experiment
 experiments = [
     {
         "name":"preprocess_no-preprcs",
-        "data_params"={
+        "data_params":{
             "preprocess_desc":"no-preprcs",
         },
         "embedding_params":{
             "num_epochs":1
         },
-        "selectivity_prams":{
+        "selectivity_params":{
             "num_epochs":1
         }
     },
     {
         "name":"preprocess_2024preprcs",
-        "data_params"={
+        "data_params":{
             "preprocess_desc":"2024preprcs",
         },
         "embedding_params":{
             "num_epochs":1
         },
-        "selectivity_prams":{
+        "selectivity_params":{
             "num_epochs":1
         }
     }
@@ -86,7 +86,7 @@ def main():
         for training_seed in training_seeds:
             run_id += 1
 
-            print(f"\nRun {run_id}/{total_run}")
+            print(f"\nRun {run_id}/{total_runs}")
             print(f"Config: {experiment["name"]}")
             print(f"Training seed: {training_seed}")
 
@@ -101,7 +101,7 @@ def main():
                 split_seed=split_seed,
                 output_path=output_path,
                 data_params=experiment["data_params"],
-                embedding_prams=experiment["embedding_params"],
+                embedding_params=experiment["embedding_params"],
                 selectivity_params=experiment["selectivity_params"]
             )
 
