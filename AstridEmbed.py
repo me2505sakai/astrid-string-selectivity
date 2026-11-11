@@ -16,12 +16,9 @@ embedding_learner_configs, frequency_configs, selectivity_learner_configs = None
 #This function gives a single place to change all the necessary configurations.
 #Please see misc_utils for some additional descriptions of what these attributes mean
 def setup_configs(
-    dataset_path="datasets/dblp/",
     output_path="outputs/00/",
-    file_name_prefix="dblp_titles",
-    query_type="unique-substring",
-    preprocess_desc="no-preprcs",
-    embedding_prams=None,
+    data_params=None,
+    embedding_params=None,
     selectivity_params=None
 ):
     global embedding_learner_configs
@@ -29,6 +26,13 @@ def setup_configs(
     global selectivity_learner_configs
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    data_defaults = {
+        "dataset_path":"datasets/dblp/",
+        "file_name_prefix":"dblp_titles",
+        "query_type":"unique-substring",
+        "preprocess_desc":"no-preprcs",
+    }
 
     embedding_defaults = {
         "embedding_dimension":64,
@@ -50,10 +54,19 @@ def setup_configs(
         "log_by_batch":True
     }
 
-    if embedding_prams is not None:
-        embedding_defaults.update(embedding_prams)
+    if data_params is not None:
+        data_defaults.update(data_params)
+    if embedding_params is not None:
+        embedding_defaults.update(embedding_params)
     if selectivity_params is not None:
         selectivity_defaults.update(selectivity_params)
+
+
+    dataset_path=data_defaults["dataset_path"]
+    file_name_prefix=data_defaults["file_name_prefix"]
+    query_type=data_defaults["query_type"]
+    preprocess_desc=data_defaults["preprocess_desc"]
+    
 
     if not os.path.exists(output_path):
         os.makedirs(output_path)
@@ -87,7 +100,8 @@ def setup_configs(
     return (
         embedding_learner_configs,
         frequency_configs,
-        selectivity_learner_configs
+        selectivity_learner_configs,
+        data_defaults
     )
 
 
@@ -175,12 +189,9 @@ def load_selectivity_estimation_model(model_file_name, string_helper):
 def run_experiment(
     training_seed=1234,
     split_seed=1234,
-    dataset_path="datasets/dblp/",
     output_path="outputs/00/",
-    file_name_prefix="dblp_titles",
-    query_type="unique-substring",
-    preprocess_desc="no-preprcs",
-    embedding_prams=None,
+    data_params=None,
+    embedding_params=None,
     selectivity_params=None
 ):
     global embedding_learner_configs
@@ -193,25 +204,20 @@ def run_experiment(
     (
         embedding_learner_configs,
         frequency_configs,
-        selectivity_learner_configs
+        selectivity_learner_configs,
+        data_defaults
     ) = setup_configs(
-        dataset_path=dataset_path,
         output_path=output_path,
-        file_name_prefix=file_name_prefix,
-        query_type=query_type,
-        preprocess_desc=preprocess_desc,
-        embedding_prams=embedding_prams,
+        data_params=data_params,
+        embedding_params=embedding_params,
         selectivity_params=selectivity_params
     )
 
     config_info = {
         "training_seed":training_seed,
         "split_seed":split_seed,
-        "dataset_path":dataset_path,
         "output_path":output_path,
-        "file_name_prefix":file_name_prefix,
-        "query_type":query_type,
-        "preprocess_desc":preprocess_desc,
+        "data_params":data_defaults,
         "embedding_learner_config":embedding_learner_configs._asdict(),
         "selectivity_learner_configs":selectivity_learner_configs._asdict(),
         "frequency_configs":frequency_configs._asdict()
@@ -312,12 +318,9 @@ if __name__ == "__main__":
     results = run_experiment(
         training_seed=1234,
         split_seed=1234,
-        dataset_path="datasets/dblp/",
         output_path="outputs/00/",
-        file_name_prefix="dblp_titles",
-        query_type="unique-substring",
-        preprocess_desc="no-preprcs",
-        embedding_prams=None,
+        data_params=None,
+        embedding_params=None,
         selectivity_params=None
     )
     print(results)
