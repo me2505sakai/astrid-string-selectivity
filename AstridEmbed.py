@@ -14,7 +14,14 @@ embedding_learner_configs, frequency_configs, selectivity_learner_configs = None
 
 #This function gives a single place to change all the necessary configurations.
 #Please see misc_utils for some additional descriptions of what these attributes mean
-def setup_configs():
+def setup_configs(
+    output_path="outputs/00/",
+    file_name_prefix="dblp_titles",
+    queery_type="unique-substring",
+    preprocess_desc="no-preprcs",
+    embedding_prams=None,
+    selectivity_params=None,
+):
     global embedding_learner_configs, frequency_configs, selectivity_learner_configs
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
