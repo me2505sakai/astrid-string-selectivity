@@ -306,3 +306,18 @@ def run_experiment(
             results[f"{split_name}_qerror_{q}"] = float(np.quantile(q_errors,q))
 
     return results
+
+
+if __name__ == "__main__":
+    results = run_experiment(
+        training_seed=1234,
+        split_seed=1234,
+        dataset_path="datasets/dblp/",
+        output_path="outputs/00/",
+        file_name_prefix="dblp_titles",
+        query_type="unique-substring",
+        preprocess_desc="no-preprcs",
+        embedding_prams=None,
+        selectivity_params=None
+    )
+    print(results)
