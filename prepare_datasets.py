@@ -101,8 +101,6 @@ def preprocess01_count_file(count_file_name, output_file_name):
     replicated_df.to_csv(output_file_name, index=False, encoding='utf-8')
 
 def preprocess02_count_file(count_file_name, output_file_name):
-    from math import log10
-    from math import 
     # print("Preprocessing ",count_file_name)
     df = pd.read_csv(count_file_name, keep_default_na=False)
 
