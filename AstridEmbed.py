@@ -34,9 +34,10 @@ def setup_configs():
     #If not, please change the file names appropriately
     file_name_prefix = "dblp_titles"
     query_type = "prefix"
+    preprocess_desc = "no-preprcs"
     frequency_configs = misc_utils.StringFrequencyConfigs(
         string_list_file_name= dataset_path + file_name_prefix + ".csv",
-        selectivity_file_name= dataset_path + file_name_prefix +  "_" +  query_type + "_counts.csv",
+        selectivity_file_name= dataset_path + file_name_prefix +  "_" +  query_type + "_" +  preprocess_desc + "_counts.csv",
         triplets_file_name= dataset_path + file_name_prefix +  "_" +  query_type + "_triplets.csv"
     )
 
@@ -45,10 +46,10 @@ def setup_configs():
         #will be updated in train_selectivity_estimator
         min_val=0.0, max_val=1.0,
         embedding_model_file_name = output_path + file_name_prefix +  "_" +  query_type + "_embedding_model.pth",
-        selectivity_model_file_name = output_path + file_name_prefix +  "_" +  query_type + "_selectivity_model.pth",
+        selectivity_model_file_name = output_path + file_name_prefix +  "_" +  query_type + "_" +  preprocess_desc + "_selectivity_model.pth",
         embedding_log_file_name = output_path + file_name_prefix +  "_" +  query_type + "_embedding_log.csv",
-        selectivity_log_file_name = output_path + file_name_prefix +  "_" +  query_type + "_selectivity_log.csv",
-        prediction_file_name = output_path + file_name_prefix +  "_" +  query_type + "_prediction.csv",
+        selectivity_log_file_name = output_path + file_name_prefix +  "_" +  query_type + "_" +  preprocess_desc + "_selectivity_log.csv",
+        prediction_file_name = output_path + file_name_prefix +  "_" +  query_type + "_" +  preprocess_desc + "_prediction.csv",
         log_by_batch = True
         )
 
