@@ -9,6 +9,7 @@ from string_dataset_helpers import TripletStringDataset, StringSelectivityDatase
 import EmbeddingLearner
 import SupervisedSelectivityEstimator
 import json
+import time
 
 embedding_learner_configs, frequency_configs, selectivity_learner_configs = None, None, None
 
@@ -194,6 +195,9 @@ def run_experiment(
     embedding_params=None,
     selectivity_params=None
 ):
+    split_times = [0,0,0,0,0,0,0]
+    split_times[0] = round(time.time())
+
     global embedding_learner_configs
     global frequency_configs
     global selectivity_learner_configs
@@ -233,6 +237,8 @@ def run_experiment(
 
     string_helper = misc_utils.setup_vocabulary(frequency_configs.string_list_file_name)
 
+    split_times[1] = round(time.time())
+
     #You can comment/uncomment the following lines based on whether you
     # want to train from scratch or just reload a previously trained embedding model.
     embedding_model = train_astrid_embedding_model(
@@ -245,6 +251,8 @@ def run_experiment(
     #     string_helper
     # )
 
+    split_times[2] = round(time.time())
+
     #Load the input file and split into 50-50 train, test split
     df = pd.read_csv(frequency_configs.selectivity_file_name, keep_default_na=False)
     #Some times strings that start with numbers or
@@ -256,6 +264,8 @@ def run_experiment(
     df["is_train"] = df.index.isin(train_indices)
     train_df = df.iloc[train_indices]
     test_df = df.iloc[test_indices]
+
+    split_times[3] = round(time.time())
 
     #You can comment/uncomment the following lines based on whether you
     # want to train from scratch or just reload a previously trained embedding model.
@@ -271,9 +281,13 @@ def run_experiment(
     #     string_helper
     # )
 
+    split_times[4] = round(time.time())
+
     #Get the predictions from the learned model and compute basic summary statistics
     normalized_predictions, denormalized_predictions = get_selectivity_for_strings(
         df["string"].values, embedding_model, selectivity_model, string_helper)
+
+    split_times[5] = round(time.time())
     
     df["predicted_normalized_selectivity"] = normalized_predictions
     df["predicted_denormalized_selectivity"] = denormalized_predictions
@@ -298,8 +312,9 @@ def run_experiment(
 
     print(f"Prediction file successfully saved to {prediction_file_name}")
 
-    results={}
+    split_times[6] = round(time.time())
 
+    results={}
 
     for split_name, mask in [("Train", df["is_train"]), ("Test", ~df["is_train"])]:
         q_errors = df.loc[mask, "q_error"].values
@@ -310,6 +325,27 @@ def run_experiment(
 
         for q in [0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]:
             results[f"{split_name}_qerror_{q}"] = float(np.quantile(q_errors,q))
+
+    results["elapsed_time_initialization"] = int(
+        split_times[1]-split_times[0]
+    )
+    results["elapsed_time_embeddingmodel"] = int(
+        split_times[2]-split_times[1]
+    )
+    results["elapsed_time_interval"] = int(
+        split_times[3]-split_times[2]
+    )
+    results["elapsed_time_selectivitymodel"] = int(
+        split_times[4]-split_times[3]
+    )
+    results["elapsed_time_prediction"] = int(
+        split_times[5]-split_times[4]
+    )
+    results["elapsed_time_finalization"] = int(
+        split_times[6]-split_times[5]
+    )
+    
+    print(f"Erapsed during this run: {split_times[6]-split_times[0]}[sec]")
 
     return results
 
