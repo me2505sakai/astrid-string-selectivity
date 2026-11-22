@@ -107,8 +107,8 @@ def main():
         print(f"Experiment:{exp_name}")
         print("="*60)
 
-        for split_seed in split_seeds:
-            for training_seed in training_seeds:
+        for training_seed in training_seeds:
+            for split_seed in split_seeds:
                 current_idx += 1
 
                 if (exp_name, split_seed, training_seed) in completed_keys:
@@ -124,6 +124,7 @@ def main():
 
                 output_path = os.path.join(base_output_path, f"run_{run_id:03d}")
                 os.makedirs(output_path, exist_ok=True)
+                shared_embedding_model_path = os.path.join(base_output_path, f"embedding_seed_{training_seed}.pth")
 
                 results = run_experiment(
                     training_seed=training_seed,
@@ -131,7 +132,8 @@ def main():
                     output_path=output_path + "/",
                     data_params=experiment["data_params"],
                     embedding_params=experiment["embedding_params"],
-                    selectivity_params=experiment["selectivity_params"]
+                    selectivity_params=experiment["selectivity_params"],
+                    shared_embedding_model_path=shared_embedding_model_path
                 )
 
                 result_row = {
