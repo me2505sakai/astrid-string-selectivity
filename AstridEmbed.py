@@ -8,33 +8,79 @@ import misc_utils
 from string_dataset_helpers import TripletStringDataset, StringSelectivityDataset
 import EmbeddingLearner
 import SupervisedSelectivityEstimator
+import json
+import time
 
 embedding_learner_configs, frequency_configs, selectivity_learner_configs = None, None, None
 
 
 #This function gives a single place to change all the necessary configurations.
 #Please see misc_utils for some additional descriptions of what these attributes mean
-def setup_configs():
-    global embedding_learner_configs, frequency_configs, selectivity_learner_configs
+def setup_configs(
+    output_path="outputs/00/",
+    data_params=None,
+    embedding_params=None,
+    selectivity_params=None
+):
+    global embedding_learner_configs
+    global frequency_configs
+    global selectivity_learner_configs
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    embedding_learner_configs = misc_utils.AstridEmbedLearnerConfigs(embedding_dimension=64, batch_size=128,
-        num_epochs=32, margin=0.2, device=device, lr=0.001, channel_size=8, log_by_batch=True)
 
-    dataset_path = "datasets/dblp/"
-    output_path = "outputs/00/"
+    data_defaults = {
+        "dataset_path":"datasets/dblp/",
+        "file_name_prefix":"dblp_titles",
+        "query_type":"unique-substring",
+        "preprocess_desc":"no-preprcs",
+    }
 
-    # mkDir for output if not exists
+    embedding_defaults = {
+        "embedding_dimension":64,
+        "batch_size":128,
+        "num_epochs":32,
+        "margin":0.2,
+        "lr":0.001,
+        "channel_size":8,
+        "log_by_batch":True
+    }
+
+    selectivity_defaults = {
+        "embedding_dimension":64,
+        "batch_size":128,
+        "num_epochs":64,
+        "lr":0.001,
+        "min_val":0.0,
+        "max_val":1.0,
+        "log_by_batch":True
+    }
+
+    if data_params is not None:
+        data_defaults.update(data_params)
+    if embedding_params is not None:
+        embedding_defaults.update(embedding_params)
+    if selectivity_params is not None:
+        selectivity_defaults.update(selectivity_params)
+
+
+    dataset_path=data_defaults["dataset_path"]
+    file_name_prefix=data_defaults["file_name_prefix"]
+    query_type=data_defaults["query_type"]
+    preprocess_desc=data_defaults["preprocess_desc"]
+    
+
     if not os.path.exists(output_path):
         os.makedirs(output_path)
     if not os.path.exists(dataset_path):
         os.makedirs(dataset_path)
+    
+    embedding_learner_configs = misc_utils.AstridEmbedLearnerConfigs(
+        device=device,
+        **embedding_defaults
+    )    
 
     #This assumes that prepare_dataset function was called to output the files.
     #If not, please change the file names appropriately
-    file_name_prefix = "dblp_titles"
-    query_type = "prefix"
-    preprocess_desc = "no-preprcs"
     frequency_configs = misc_utils.StringFrequencyConfigs(
         string_list_file_name= dataset_path + file_name_prefix + ".csv",
         selectivity_file_name= dataset_path + file_name_prefix +  "_" +  query_type + "_" +  preprocess_desc + "_counts.csv",
@@ -42,18 +88,22 @@ def setup_configs():
     )
 
     selectivity_learner_configs = misc_utils.SelectivityEstimatorConfigs(
-        embedding_dimension=64, batch_size=128, num_epochs=64, device=device, lr=0.001,
+        device=device,
         #will be updated in train_selectivity_estimator
-        min_val=0.0, max_val=1.0,
         embedding_model_file_name = output_path + file_name_prefix +  "_" +  query_type + "_embedding_model.pth",
         selectivity_model_file_name = output_path + file_name_prefix +  "_" +  query_type + "_" +  preprocess_desc + "_selectivity_model.pth",
         embedding_log_file_name = output_path + file_name_prefix +  "_" +  query_type + "_embedding_log.csv",
         selectivity_log_file_name = output_path + file_name_prefix +  "_" +  query_type + "_" +  preprocess_desc + "_selectivity_log.csv",
         prediction_file_name = output_path + file_name_prefix +  "_" +  query_type + "_" +  preprocess_desc + "_prediction.csv",
-        log_by_batch = True
-        )
+        **selectivity_defaults
+    )
 
-    return embedding_learner_configs, frequency_configs, selectivity_learner_configs
+    return (
+        embedding_learner_configs,
+        frequency_configs,
+        selectivity_learner_configs,
+        data_defaults
+    )
 
 
 
@@ -137,13 +187,47 @@ def load_selectivity_estimation_model(model_file_name, string_helper):
     selectivity_model.load_state_dict(torch.load(model_file_name))
     return selectivity_model
 
-def main():
-    global embedding_learner_configs, frequency_configs, selectivity_learner_configs
-    random_seed = 1234
-    misc_utils.initialize_random_seeds(random_seed)
+def run_experiment(
+    training_seed=1234,
+    split_seed=1234,
+    output_path="outputs/00/",
+    data_params=None,
+    embedding_params=None,
+    selectivity_params=None
+):
+    split_times = [0,0,0,0,0,0,0]
+    split_times[0] = round(time.time())
+
+    global embedding_learner_configs
+    global frequency_configs
+    global selectivity_learner_configs
+
+    misc_utils.initialize_random_seeds(training_seed)
 
     #Set the configs
-    embedding_learner_configs, frequency_configs, selectivity_learner_configs = setup_configs()
+    (
+        embedding_learner_configs,
+        frequency_configs,
+        selectivity_learner_configs,
+        data_defaults
+    ) = setup_configs(
+        output_path=output_path,
+        data_params=data_params,
+        embedding_params=embedding_params,
+        selectivity_params=selectivity_params
+    )
+
+    config_info = {
+        "training_seed":training_seed,
+        "split_seed":split_seed,
+        "output_path":output_path,
+        "data_params":data_defaults,
+        "embedding_learner_config":embedding_learner_configs._asdict(),
+        "selectivity_learner_configs":selectivity_learner_configs._asdict(),
+        "frequency_configs":frequency_configs._asdict()
+    }
+    with open(output_path + "config.json", "w") as f:
+        json.dump(config_info, f, indent=4, default=str)
 
     embedding_model_file_name = selectivity_learner_configs.embedding_model_file_name
     selectivity_model_file_name = selectivity_learner_configs.selectivity_model_file_name
@@ -153,10 +237,21 @@ def main():
 
     string_helper = misc_utils.setup_vocabulary(frequency_configs.string_list_file_name)
 
+    split_times[1] = round(time.time())
+
     #You can comment/uncomment the following lines based on whether you
     # want to train from scratch or just reload a previously trained embedding model.
-    embedding_model = train_astrid_embedding_model(string_helper, embedding_model_file_name, embedding_log_file_name)
-    # embedding_model = load_embedding_model(embedding_model_file_name, string_helper)
+    embedding_model = train_astrid_embedding_model(
+        string_helper,
+        embedding_model_file_name,
+        embedding_log_file_name
+    )
+    # embedding_model = load_embedding_model(
+    #     embedding_model_file_name,
+    #     string_helper
+    # )
+
+    split_times[2] = round(time.time())
 
     #Load the input file and split into 50-50 train, test split
     df = pd.read_csv(frequency_configs.selectivity_file_name, keep_default_na=False)
@@ -164,25 +259,43 @@ def main():
     # special strings such as nan which confuses Pandas' type inference algorithm
     df["string"] = df["string"].astype(str)
     df = compute_normalized_selectivities(df)
-    train_indices, test_indices = train_test_split(df.index, random_state=random_seed, test_size=0.5)
+    train_indices, test_indices = train_test_split(df.index, random_state=split_seed, test_size=0.5)
 
     df["is_train"] = df.index.isin(train_indices)
-    train_df, test_df = df.iloc[train_indices], df.iloc[test_indices]
+    train_df = df.iloc[train_indices]
+    test_df = df.iloc[test_indices]
+
+    split_times[3] = round(time.time())
 
     #You can comment/uncomment the following lines based on whether you
     # want to train from scratch or just reload a previously trained embedding model.
-    selectivity_model = train_selectivity_estimator(train_df, string_helper,
-        embedding_model, selectivity_model_file_name, selectivity_log_file_name)
-    # selectivity_model = load_selectivity_estimation_model(selectivity_model_file_name, string_helper)
+    selectivity_model = train_selectivity_estimator(
+        train_df,
+        string_helper,
+        embedding_model,
+        selectivity_model_file_name,
+        selectivity_log_file_name
+    )
+    # selectivity_model = load_selectivity_estimation_model(
+    #     selectivity_model_file_name,
+    #     string_helper
+    # )
+
+    split_times[4] = round(time.time())
 
     #Get the predictions from the learned model and compute basic summary statistics
     normalized_predictions, denormalized_predictions = get_selectivity_for_strings(
         df["string"].values, embedding_model, selectivity_model, string_helper)
+
+    split_times[5] = round(time.time())
     
     df["predicted_normalized_selectivity"] = normalized_predictions
     df["predicted_denormalized_selectivity"] = denormalized_predictions
 
-    actuals = torch.tensor(df["normalized_selectivities"].values)
+    actuals = torch.tensor(
+        df["normalized_selectivities"].values
+    )
+
     q_errors = misc_utils.compute_qerrors(
         normalized_predictions,
         actuals,
@@ -191,16 +304,59 @@ def main():
     )
     df["q_error"] = q_errors
     
-    df.to_csv(prediction_file_name, index=True, index_label="index")
+    df.to_csv(
+        prediction_file_name,
+        index=True,
+        index_label="index"
+    )
+
     print(f"Prediction file successfully saved to {prediction_file_name}")
+
+    split_times[6] = round(time.time())
+
+    results={}
 
     for split_name, mask in [("Train", df["is_train"]), ("Test", ~df["is_train"])]:
         q_errors = df.loc[mask, "q_error"].values
 
-        print(f"\n--- {split_name} Data ---")
-        print("Mean q-error loss:", np.mean(q_errors))
-        print("Percentiles [0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]:", 
-            [np.quantile(q_errors, q) for q in [0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]])
+        results[f"{split_name}_mean_qerror"] = float(
+            np.mean(q_errors)
+        )
+
+        for q in [0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]:
+            results[f"{split_name}_qerror_{q}"] = float(np.quantile(q_errors,q))
+
+    results["elapsed_time_initialization"] = int(
+        split_times[1]-split_times[0]
+    )
+    results["elapsed_time_embeddingmodel"] = int(
+        split_times[2]-split_times[1]
+    )
+    results["elapsed_time_interval"] = int(
+        split_times[3]-split_times[2]
+    )
+    results["elapsed_time_selectivitymodel"] = int(
+        split_times[4]-split_times[3]
+    )
+    results["elapsed_time_prediction"] = int(
+        split_times[5]-split_times[4]
+    )
+    results["elapsed_time_finalization"] = int(
+        split_times[6]-split_times[5]
+    )
+    
+    print(f"Erapsed during this run: {split_times[6]-split_times[0]}[sec]")
+
+    return results
+
 
 if __name__ == "__main__":
-    main()
+    results = run_experiment(
+        training_seed=1234,
+        split_seed=1234,
+        output_path="outputs/00/",
+        data_params=None,
+        embedding_params=None,
+        selectivity_params=None
+    )
+    print(results)
