@@ -244,15 +244,19 @@ def run_experiment(
 
     split_times[1] = round(time.time())
 
-    #You can comment/uncomment the following lines based on whether you
-    # want to train from scratch or just reload a previously trained embedding model.
+
     embedding_model = None
     if shared_embedding_model_path is not None and os.path.exists(shared_embedding_model_path):
-        print(f"Loading existing embedding model: {shared_embedding_model_path}")
+        print(f"[Skip Embedding Training] Loading existing embedding model: {shared_embedding_model_path}")
         embedding_model = load_embedding_model(
             shared_embedding_model_path,
             string_helper
         )
+        marker_file_name = os.path.splitext(embedding_model_file_name)[0] + "_loaded.txt"
+        with open(marker_file_name, "w", encoding="utf-8") as f:
+            f.write("Loaded pre-trained embedding model (skipped training).\n")
+            f.write(f"Source path (relative): {shared_embedding_model_path}\n")
+
     else:
         embedding_model = train_astrid_embedding_model(
             string_helper,
@@ -261,6 +265,7 @@ def run_experiment(
         )
         if shared_embedding_model_path is not None:
             torch.save(embedding_model.state_dict(), shared_embedding_model_path)
+
 
 
     split_times[2] = round(time.time())
