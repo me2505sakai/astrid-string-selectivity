@@ -33,6 +33,7 @@ from AstridEmbed import run_experiment
 #     }
 # )
 
+# paramsは{}とするとデフォルト値(上記)が使われる
 experiments = [
     {
         "name":"preprocess_no-preprcs",
@@ -62,76 +63,101 @@ experiments = [
 
 training_seeds = [1234, 2345]
 
-split_seed = 1234
+split_seeds = [1234, 2345]
 
-experiment_name = "preprcs_ex01"
+experiment_name = "develop-test2"
 
 
-base_output_path = f"outputs/{experiment_name}/"
+base_output_path = os.path.join("outputs",experiment_name)
+summary_csv_path = os.path.join(base_output_path, "summary.csv")
 
 def main():
     os.makedirs(base_output_path, exist_ok=True)
 
-    all_results = []
+    print(f"Starting experiment in ({base_output_path}).")
 
-    total_runs = len(experiments) * len(training_seeds)
-    run_id = 0
+    all_results = None
+    completed_keys = None
+    run_id = None
+
+    #すでにsummary.csvがある場合、完了済み条件をスキップ
+    if os.path.exists(summary_csv_path):
+        existing_df = pd.read_csv(summary_csv_path)
+        all_results = existing_df.to_dict(orient="records")
+        completed_keys = set(
+            zip(
+                existing_df["experiment_name"],
+                existing_df["split_seed"],
+                existing_df["training_seed"],
+            )
+        )
+        run_id = int(existing_df["run_id"].max())
+        print(f"Resuming from existing summary.csv ({len(completed_keys)} runs already completed).")
+    else:
+        all_results = []
+        completed_keys = set()
+        run_id = 0
+
+    total_runs = len(experiments) * len(split_seeds) * len(training_seeds)
+    current_idx = 0
 
     for experiment in experiments:
-        
+        exp_name = experiment["name"]
         print("\n"+"="*60)
-        print(f"Experiment:{experiment["name"]}")
+        print(f"Experiment:{exp_name}")
         print("="*60)
 
-        for training_seed in training_seeds:
-            run_id += 1
+        for split_seed in split_seeds:
+            for training_seed in training_seeds:
+                current_idx += 1
 
-            print(f"\nRun {run_id}/{total_runs}")
-            print(f"Config: {experiment["name"]}")
-            print(f"Training seed: {training_seed}")
+                if (exp_name, split_seed, training_seed) in completed_keys:
+                    print(
+                        f"[Skip {current_idx}/{total_runs}] "
+                        f"{exp_name} | split={split_seed}, train={training_seed}"
+                    )
+                    continue
+                
+                run_id += 1
+                print(f"\nRun {run_id} (Progress: {current_idx}/{total_runs})")
+                print(f"Config: {exp_name} | split_seed: {split_seed} | training_seed: {training_seed}")
 
-            output_path = (
-                base_output_path + f"run_{run_id:03d}/"
-            )
+                output_path = os.path.join(base_output_path, f"run_{run_id:03d}")
+                os.makedirs(output_path, exist_ok=True)
 
-            os.makedirs(output_path, exist_ok=True)
+                results = run_experiment(
+                    training_seed=training_seed,
+                    split_seed=split_seed,
+                    output_path=output_path + "/",
+                    data_params=experiment["data_params"],
+                    embedding_params=experiment["embedding_params"],
+                    selectivity_params=experiment["selectivity_params"]
+                )
 
-            results = run_experiment(
-                training_seed=training_seed,
-                split_seed=split_seed,
-                output_path=output_path,
-                data_params=experiment["data_params"],
-                embedding_params=experiment["embedding_params"],
-                selectivity_params=experiment["selectivity_params"]
-            )
+                result_row = {
+                    "run_id": run_id,
+                    "experiment_name": exp_name,
+                    "training_seed": training_seed,
+                    "split_seed": split_seed,
+                    **experiment["data_params"],
+                    **{
+                        f"embedding_{k}":v
+                        for k,v in experiment["embedding_params"].items()
+                    },
+                    **{
+                        f"selectivity_{k}":v
+                        for k,v in experiment["selectivity_params"].items()
+                    },
+                    **results
+                }
 
-            result_row = {
-                "run_id": run_id,
-                "experiment_name": experiment["name"],
-                "training_seed": training_seed,
-                "split_seed": split_seed,
-                **experiment["data_params"],
-                **{
-                    f"embedding_{k}":v
-                    for k,v in experiment["embedding_params"].items()
-                },
-                **{
-                    f"selectivity_{k}":v
-                    for k,v in experiment["selectivity_params"].items()
-                },
-                **results
-            }
+                all_results.append(result_row)
+                completed_keys.add((exp_name, split_seed, training_seed))
 
-            all_results.append(result_row)
+                summary_df = pd.DataFrame(all_results)
+                summary_df.to_csv(summary_csv_path, index=False)
 
-            summary_df = pd.DataFrame(all_results)
-            summary_df.to_csv(
-                base_output_path + "summary.csv",
-                index=False
-            )
-
-            print("\nResults:")
-            print(results)
+                print("Results:",results)
     
     print("\nAll experiments completed.")
     print(f"Result saved to {base_output_path}summary.csv")
