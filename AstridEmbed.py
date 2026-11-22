@@ -10,6 +10,7 @@ import EmbeddingLearner
 import SupervisedSelectivityEstimator
 import json
 import time
+from preprocess import apply_preprocess
 
 embedding_learner_configs, frequency_configs, selectivity_learner_configs = None, None, None
 
@@ -83,7 +84,7 @@ def setup_configs(
     #If not, please change the file names appropriately
     frequency_configs = misc_utils.StringFrequencyConfigs(
         string_list_file_name= dataset_path + file_name_prefix + ".csv",
-        selectivity_file_name= dataset_path + file_name_prefix +  "_" +  query_type + "_" +  preprocess_desc + "_counts.csv",
+        selectivity_file_name= dataset_path + file_name_prefix +  "_" +  query_type + "_" + "counts.csv",
         triplets_file_name= dataset_path + file_name_prefix +  "_" +  query_type + "_triplets.csv"
     )
 
@@ -254,16 +255,21 @@ def run_experiment(
     split_times[2] = round(time.time())
 
     #Load the input file and split into 50-50 train, test split
-    df = pd.read_csv(frequency_configs.selectivity_file_name, keep_default_na=False)
+    raw_df = pd.read_csv(frequency_configs.selectivity_file_name, keep_default_na=False)
     #Some times strings that start with numbers or
     # special strings such as nan which confuses Pandas' type inference algorithm
-    df["string"] = df["string"].astype(str)
-    df = compute_normalized_selectivities(df)
-    train_indices, test_indices = train_test_split(df.index, random_state=split_seed, test_size=0.5)
+    raw_df["string"] = raw_df["string"].astype(str)
+    raw_df = compute_normalized_selectivities(raw_df)
 
-    df["is_train"] = df.index.isin(train_indices)
-    train_df = df.iloc[train_indices]
-    test_df = df.iloc[test_indices]
+    train_indices, test_indices = train_test_split(raw_df.index, random_state=split_seed, test_size=0.5)
+    raw_train_df = raw_df.iloc[train_indices].copy()
+    test_df = raw_df.iloc[test_indices].copy()
+
+    train_df = apply_preprocess(raw_train_df, data_defaults["preprocess_desc"])
+    train_df["is_train"] = True
+    test_df["is_train"] = False
+
+    df = pd.concat([train_df, test_df], ignore_index=True)
 
     split_times[3] = round(time.time())
 
