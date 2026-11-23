@@ -177,10 +177,13 @@ def get_selectivity_for_strings(strings, embedding_model, selectivity_model, str
 
 
 def load_embedding_model(model_file_name, string_helper):
+    global embedding_learner_configs
     from EmbeddingLearner import EmbeddingCNNNetwork
     embedding_model= EmbeddingCNNNetwork(string_helper, embedding_learner_configs)
-    embedding_model.load_state_dict(torch.load(model_file_name))
-    return embedding_model
+    embedding_model.load_state_dict(
+        torch.load(model_file_name, map_location=embedding_learner_configs.device)
+    )
+    return embedding_model.to(embedding_learner_configs.device)
 
 def load_selectivity_estimation_model(model_file_name, string_helper):
     from SupervisedSelectivityEstimator import SelectivityEstimator
@@ -194,7 +197,8 @@ def run_experiment(
     output_path="outputs/00/",
     data_params=None,
     embedding_params=None,
-    selectivity_params=None
+    selectivity_params=None,
+    shared_embedding_model_path=None
 ):
     split_times = [0,0,0,0,0,0,0]
     split_times[0] = round(time.time())
@@ -240,17 +244,29 @@ def run_experiment(
 
     split_times[1] = round(time.time())
 
-    #You can comment/uncomment the following lines based on whether you
-    # want to train from scratch or just reload a previously trained embedding model.
-    embedding_model = train_astrid_embedding_model(
-        string_helper,
-        embedding_model_file_name,
-        embedding_log_file_name
-    )
-    # embedding_model = load_embedding_model(
-    #     embedding_model_file_name,
-    #     string_helper
-    # )
+
+    embedding_model = None
+    if shared_embedding_model_path is not None and os.path.exists(shared_embedding_model_path):
+        print(f"[Skip Embedding Training] Loading existing embedding model: {shared_embedding_model_path}")
+        embedding_model = load_embedding_model(
+            shared_embedding_model_path,
+            string_helper
+        )
+        marker_file_name = os.path.splitext(embedding_model_file_name)[0] + "_loaded.txt"
+        with open(marker_file_name, "w", encoding="utf-8") as f:
+            f.write("Loaded pre-trained embedding model (skipped training).\n")
+            f.write(f"Source path (relative): {shared_embedding_model_path}\n")
+
+    else:
+        embedding_model = train_astrid_embedding_model(
+            string_helper,
+            embedding_model_file_name,
+            embedding_log_file_name
+        )
+        if shared_embedding_model_path is not None:
+            torch.save(embedding_model.state_dict(), shared_embedding_model_path)
+
+
 
     split_times[2] = round(time.time())
 
@@ -363,6 +379,7 @@ if __name__ == "__main__":
         output_path="outputs/00/",
         data_params=None,
         embedding_params=None,
-        selectivity_params=None
+        selectivity_params=None,
+        shared_embedding_model_path=None
     )
     print(results)
