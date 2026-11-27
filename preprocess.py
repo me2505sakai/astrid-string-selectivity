@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 
 def preprocess_no_preprcs(df: pd.DataFrame) -> pd.DataFrame:
@@ -22,12 +23,21 @@ def preprocess_2025(df: pd.DataFrame) -> pd.DataFrame:
     replication_counts = string_lengths * selectivity_digits
     return df.loc[df.index.repeat(replication_counts)].reset_index(drop=True)
 
+def preprocess_2025_log(df: pd.DataFrame) -> pd.DataFrame:
+    """文字列長 × (log10(selectivity) + 1) だけ各行を複製"""
+    strings = df["string"].astype(str)
+    string_lengths = strings.str.len()
+    
+    selectivity_log = np.log10(df["selectivity"].astype(int)) + 1
+    replication_counts = (string_lengths * selectivity_log).round().astype(int)
+    return df.loc[df.index.repeat(replication_counts)].reset_index(drop=True)
 
 # 新しい前処理を追加する場合はここに関数を登録する
 PREPROCESS_FUNCTIONS = {
     "no-preprcs": preprocess_no_preprcs,
     "2024preprcs": preprocess_2024,
     "2025preprcs": preprocess_2025,
+    "2025logpreprcs": preprocess_2025_log,
 }
 
 
