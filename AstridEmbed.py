@@ -279,13 +279,11 @@ def run_experiment(
 
     train_indices, test_indices = train_test_split(raw_df.index, random_state=split_seed, test_size=0.5)
     raw_train_df = raw_df.iloc[train_indices].copy()
-    test_df = raw_df.iloc[test_indices].copy()
 
     train_df = apply_preprocess(raw_train_df, data_defaults["preprocess_desc"])
-    train_df["is_train"] = True
-    test_df["is_train"] = False
 
-    df = pd.concat([train_df, test_df], ignore_index=True)
+    df = raw_df.copy()
+    df["is_train"] = df.index.isin(train_indices)
 
     split_times[3] = round(time.time())
 
